@@ -1,0 +1,9 @@
+{
+  "name": "ai-extensions",
+  "version": "1.0.0",
+  "description": "Personal pi coding agent extensions",
+  "keywords": ["pi-package"],
+  "pi": {
+    "extensions": ["./extensions/openrouter-session/index.ts"]
+  }
+}
