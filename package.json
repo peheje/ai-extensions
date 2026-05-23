@@ -4,6 +4,9 @@
   "description": "Personal pi coding agent extensions",
   "keywords": ["pi-package"],
   "pi": {
-    "extensions": ["./extensions/openrouter-session/index.ts"]
+    "extensions": [
+      "./extensions/openrouter-session/index.ts",
+      "./extensions/openrouter-floor/index.ts"
+    ]
   }
 }

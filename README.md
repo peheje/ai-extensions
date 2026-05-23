@@ -11,4 +11,11 @@ Sets `body.session_id` on OpenRouter requests to enable chat history in OpenRout
 - New sessions → new OpenRouter chats
 - Resumed sessions → continue existing OpenRouter chats
 
+### openrouter-floor
+
+Appends `:floor` to `body.model` on OpenRouter requests so OpenRouter routes to the cheapest provider for the selected model.
+
+- Ignores non-OpenRouter providers
+- Leaves models that already end in `:floor` unchanged
+
 Place in `~/.pi/agent/extensions/` or reference via pi packages.
