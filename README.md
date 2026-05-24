@@ -2,6 +2,18 @@
 
 Personal collection of pi coding agent extensions.
 
+## Install
+
+```bash
+pi install git:github.com/peheje/ai-extensions
+```
+
+Update an existing install:
+
+```bash
+pi update git:github.com/peheje/ai-extensions
+```
+
 ## Extensions
 
 ### openrouter-session
