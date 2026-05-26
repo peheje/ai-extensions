@@ -7,6 +7,7 @@ BASHRC="${HOME}/.bashrc"
 CODEX_HOME="${CODEX_HOME:-${HOME}/.codex}"
 PROFILE_NAME="openrouter"
 PROFILE_FILE="${CODEX_HOME}/${PROFILE_NAME}.config.toml"
+MODEL_CATALOG_FILE="${CODEX_HOME}/${PROFILE_NAME}-models.json"
 BACKUP="${BASHRC}.bak.$(date +%Y%m%d%H%M%S)"
 
 BASE_URL="https://openrouter.ai/api/v1"
@@ -27,6 +28,20 @@ command_exists() {
 
 shell_quote() {
   printf '%q' "$1"
+}
+
+json_string() {
+  local value="${1//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  value="${value//$'\n'/\\n}"
+  printf '"%s"' "$value"
+}
+
+default_context_window() {
+  case "$1" in
+    moonshotai/kimi-k2.6*) printf '262144' ;;
+    *) printf '131072' ;;
+  esac
 }
 
 log "Codex CLI + OpenRouter setup"
@@ -64,15 +79,82 @@ if [[ -z "${MODEL}" ]]; then
   fail "Model cannot be empty."
 fi
 
+DEFAULT_CONTEXT_WINDOW="$(default_context_window "${MODEL}")"
+printf 'Model context window [%s]: ' "${DEFAULT_CONTEXT_WINDOW}"
+IFS= read -r CONTEXT_WINDOW
+CONTEXT_WINDOW="${CONTEXT_WINDOW:-${DEFAULT_CONTEXT_WINDOW}}"
+
+if [[ ! "${CONTEXT_WINDOW}" =~ ^[0-9]+$ ]]; then
+  fail "Context window must be an integer token count."
+fi
+
+AUTO_COMPACT_TOKEN_LIMIT=$((CONTEXT_WINDOW * 85 / 100))
+MAX_CONTEXT_WINDOW="${CONTEXT_WINDOW}"
+MODEL_JSON="$(json_string "${MODEL}")"
+DISPLAY_NAME_JSON="$(json_string "${MODEL}")"
+
+log "Writing ${MODEL_CATALOG_FILE}"
+cat > "${MODEL_CATALOG_FILE}" <<EOF
+{
+  "models": [
+    {
+      "slug": ${MODEL_JSON},
+      "display_name": ${DISPLAY_NAME_JSON},
+      "description": "OpenRouter model used through Codex CLI.",
+      "default_reasoning_level": "none",
+      "supported_reasoning_levels": [
+        {
+          "effort": "none",
+          "description": "No explicit Codex reasoning effort"
+        }
+      ],
+      "shell_type": "shell_command",
+      "visibility": "list",
+      "supported_in_api": true,
+      "priority": 100,
+      "additional_speed_tiers": [],
+      "service_tiers": [],
+      "availability_nux": null,
+      "upgrade": null,
+      "base_instructions": "",
+      "supports_reasoning_summaries": false,
+      "default_reasoning_summary": "none",
+      "support_verbosity": false,
+      "default_verbosity": "low",
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_parallel_tool_calls": true,
+      "supports_image_detail_original": false,
+      "context_window": ${CONTEXT_WINDOW},
+      "max_context_window": ${MAX_CONTEXT_WINDOW},
+      "effective_context_window_percent": 95,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text"
+      ],
+      "supports_search_tool": false
+    }
+  ]
+}
+EOF
+chmod 600 "${MODEL_CATALOG_FILE}"
+
 log "Writing ${PROFILE_FILE}"
 cat > "${PROFILE_FILE}" <<EOF
 model = "${MODEL}"
 model_provider = "openrouter"
+model_catalog_json = "${MODEL_CATALOG_FILE}"
 
 # Codex 0.133+ requires the Responses wire API for custom model providers.
 # OpenRouter exposes this at /api/v1/responses, currently marked beta by OpenRouter.
 # Leave reasoning off by default because support varies by routed model/provider.
 model_reasoning_effort = "none"
+model_context_window = ${CONTEXT_WINDOW}
+model_auto_compact_token_limit = ${AUTO_COMPACT_TOKEN_LIMIT}
 
 [model_providers.openrouter]
 name = "OpenRouter"
@@ -139,3 +221,4 @@ printf '  codex-or           # short alias for OpenRouter profile\n'
 printf '\n'
 
 log "To change OpenRouter model later, edit ${PROFILE_FILE} or rerun this script."
+log "If Codex warns about model metadata for a new model, rerun this script and set its context window."

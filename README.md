@@ -37,6 +37,7 @@ Place in `~/.pi/agent/extensions/` or reference via pi packages.
 ### setup-codex-openrouter.sh
 
 Sets up an optional Codex CLI OpenRouter profile without changing the normal ChatGPT subscription config.
+It also writes a small model catalog so Codex has context-window metadata for custom OpenRouter model IDs.
 
 ```bash
 ./scripts/setup-codex-openrouter.sh
