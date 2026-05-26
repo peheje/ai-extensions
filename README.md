@@ -31,3 +31,17 @@ Appends `:floor` to `body.model` on OpenRouter requests so OpenRouter routes to 
 - Leaves models that already end in `:floor` unchanged
 
 Place in `~/.pi/agent/extensions/` or reference via pi packages.
+
+## Scripts
+
+### setup-codex-openrouter.sh
+
+Sets up an optional Codex CLI OpenRouter profile without changing the normal ChatGPT subscription config.
+
+```bash
+./scripts/setup-codex-openrouter.sh
+source ~/.bashrc
+
+codex              # normal Codex
+codex-openrouter   # Codex through OpenRouter
+```
